@@ -1,0 +1,253 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  MEMBER
+}
+
+enum ProjectStatus {
+  PLANNED
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  REVIEW
+  DONE
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum ActivityType {
+  PROJECT_CREATED
+  PROJECT_UPDATED
+  TASK_CREATED
+  TASK_UPDATED
+  TASK_ASSIGNED
+  TASK_STATUS_CHANGED
+  COMMENT_CREATED
+  ATTACHMENT_UPLOADED
+}
+
+model User {
+  id         String   @id @default(cuid())
+  name       String
+  email      String   @unique
+  password   String
+  role       UserRole @default(MEMBER)
+  department String?
+  avatar     String?
+  isActive   Boolean  @default(true)
+
+  createdProjects Project[] @relation("ProjectCreator")
+
+  assignedTasks TaskAssignee[]
+  comments      Comment[]
+  activities    ActivityLog[]
+  timeLogs      TimeLog[]
+
+  attachments Attachment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Project {
+  id String @id @default(cuid())
+
+  title       String
+  client      String
+  description String?
+  startDate   DateTime
+  endDate     DateTime?
+  budget      Float?
+  thumbnail   String?
+
+  status ProjectStatus @default(PLANNED)
+
+  createdById String
+  createdBy   User   @relation("ProjectCreator", fields: [createdById], references: [id])
+
+  sprints Sprint[]
+
+  tasks Task[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([client])
+}
+
+model Sprint {
+  id String @id @default(cuid())
+
+  title        String
+  sprintNumber Int
+
+  startDate DateTime
+  endDate   DateTime
+
+  order Int @default(0)
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  tasks Task[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([projectId, sprintNumber])
+  @@index([projectId])
+}
+
+model Task {
+  id String @id @default(cuid())
+
+  title       String
+  description String?
+
+  estimateHours Float?
+  dueDate       DateTime?
+
+  status   TaskStatus   @default(TODO)
+  priority TaskPriority @default(MEDIUM)
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  sprintId String?
+  sprint   Sprint? @relation(fields: [sprintId], references: [id], onDelete: SetNull)
+
+  parentTaskId String?
+  parentTask   Task?   @relation("SubTasks", fields: [parentTaskId], references: [id])
+
+  subTasks Task[] @relation("SubTasks")
+
+  assignees TaskAssignee[]
+
+  attachments Attachment[]
+  comments    Comment[]
+  activities  ActivityLog[]
+  timeLogs    TimeLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([sprintId])
+  @@index([status])
+  @@index([priority])
+}
+
+model TaskAssignee {
+  id String @id @default(cuid())
+
+  taskId String
+  userId String
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  assignedAt DateTime @default(now())
+
+  @@unique([taskId, userId])
+  @@index([taskId])
+  @@index([userId])
+}
+
+model Attachment {
+  id String @id @default(cuid())
+
+  fileName String
+  fileUrl  String
+  fileType String
+  fileSize Int
+
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  uploadedById String
+  uploadedBy   User   @relation(fields: [uploadedById], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([taskId])
+}
+
+model Comment {
+  id String @id @default(cuid())
+
+  content String
+
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  parentCommentId String?
+  parentComment   Comment? @relation("CommentReplies", fields: [parentCommentId], references: [id])
+
+  replies Comment[] @relation("CommentReplies")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([taskId])
+  @@index([userId])
+}
+
+model TimeLog {
+  id String @id @default(cuid())
+
+  hours       Float
+  description String?
+
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  loggedAt DateTime @default(now())
+
+  @@index([taskId])
+  @@index([userId])
+}
+
+model ActivityLog {
+  id String @id @default(cuid())
+
+  type ActivityType
+
+  description String?
+
+  taskId String?
+  task   Task?   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([taskId])
+  @@index([userId])
+}
