@@ -7,8 +7,8 @@ import {
   getProjectById,
   updateProject,
 } from './projects.controller';
-import { authenticate, authorize } from '../../middleware/auth';
-import { validate } from '../../middleware/valildate';
+import { authenticate, authorize } from '../../middlewares/auth';
+import { validate } from '../../middlewares/validate';
 import {
   createProjectSchema,
   updateProjectSchema,
@@ -22,6 +22,7 @@ router.use(authenticate);
 router
   .route('/')
   .post(
+    authenticate,
     authorize(UserRole.ADMIN, UserRole.MANAGER),
     validate(createProjectSchema),
     createProject,
@@ -32,10 +33,11 @@ router
   .route('/:id')
   .get(getProjectById)
   .patch(
+    authenticate,
     authorize(UserRole.ADMIN, UserRole.MANAGER),
     validate(updateProjectSchema),
     updateProject,
   )
-  .delete(authorize(UserRole.ADMIN), deleteProject);
+  .delete(authenticate, authorize(UserRole.ADMIN), deleteProject);
 
 export default router;

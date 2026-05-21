@@ -1,31 +1,28 @@
 import express from 'express';
-import type { Application, NextFunction } from 'express-serve-static-core';
-import type { Request, Response } from 'express-serve-static-core';
-import { sendData } from '../utils/utils';
 import cors from 'cors';
-const app: Application = express();
-import authRoutes from '../modules/auth/auth.route';
+import authRoutes from '../modules/auth/auth.routes';
 import projectRoutes from '../modules/projects/projects.routes';
-import { errorHandler } from '../middleware/errorHandler';
-import { notFoundHandler } from '../middleware/nofound';
-app.get('/health', (req: Request, res: Response) => {
-  sendData(
-    res,
-    {
-      success: true,
-      message: 'Hello, World!',
-      data: null,
-    },
-    200,
-  );
-});
+import sprintRoutes from '../modules/sprints/sprints.routes';
+import taskRoutes from '../modules/tasks/tasks.routes';
+import commentRoutes from '../modules/comments/comments.routes';
+import userRoutes from '../modules/users/users.routes';
+import reportRoutes from '../modules/reports/reports.routes';
+import { notFoundHandler } from '../middlewares/nofound';
+import { errorHandler } from '../middlewares/errorHandler';
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+const app = express();
+
 app.use(cors());
+app.use(express.json());
 
+// Complete API Registration
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/projects', projectRoutes);
+app.use('/api/v1/sprints', sprintRoutes);
+app.use('/api/v1/tasks', taskRoutes);
+app.use('/api/v1/comments', commentRoutes);
+app.use('/api/v1/reports', reportRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
