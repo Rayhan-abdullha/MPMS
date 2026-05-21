@@ -1,20 +1,25 @@
 import { Request, Response, NextFunction } from 'express';
 import * as authService from './auth.service';
+import { sendResponse } from '../../utils/utils';
 
 export const register = async (
   req: Request,
   res: Response,
   next: NextFunction,
-): Promise<void> => {
+) => {
   try {
     const newUser = await authService.registerUser(req.body);
 
-    res.status(201).json({
-      status: 'success',
-      data: { user: newUser },
-    });
+    return sendResponse(
+      res,
+      {
+        success: true,
+        data: newUser,
+      },
+      201,
+    );
   } catch (error) {
-    next(error); // Passes the custom errors gracefully down to your global error handler middleware
+    next(error);
   }
 };
 
@@ -22,13 +27,42 @@ export const login = async (
   req: Request,
   res: Response,
   next: NextFunction,
-): Promise<void> => {
+) => {
   try {
     const authData = await authService.loginUser(req.body);
 
-    res.status(200).json({
-      status: 'success',
+    res.cookie('mpms_auth_token', authData.accessToken, {
+      httpOnly: true,
+      sameSite: 'strict',
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+    res.cookie('mpms_user', authData.user, {
+      httpOnly: true,
+      sameSite: 'strict',
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
+    return sendResponse(res, {
+      success: true,
       data: authData,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const logoutController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  console.log('Logging out...');
+  try {
+    res.clearCookie('mpms_auth_token', { path: '/' });
+    res.clearCookie('mpms_user', { path: '/' });
+    return sendResponse(res, {
+      success: true,
+      message: 'Logged out successfully',
     });
   } catch (error) {
     next(error);

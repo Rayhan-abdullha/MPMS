@@ -1,4 +1,4 @@
-import type { Response } from "express";
+import type { Response } from 'express';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -6,7 +6,7 @@ interface ApiResponse<T> {
   data?: T;
 }
 
-export function sendData<T>(
+export function sendResponse<T>(
   res: Response,
   apiResponse: ApiResponse<T>,
   status: number = 200,
