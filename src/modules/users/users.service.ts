@@ -36,6 +36,7 @@ export const getTeamDirectory = async (filters: {
       role: true,
       department: true,
       avatar: true,
+      isActive: true,
     },
   });
 };

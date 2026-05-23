@@ -7,7 +7,7 @@ export const createProject = async (
   next: NextFunction,
 ) => {
   try {
-    const creatorId = req.user!.id; // Captured natively by authenticate middleware
+    const creatorId = req.user!.id;
     const project = await projectService.createNewProject(req.body, creatorId);
 
     res.status(201).json({ status: 'success', data: { project } });

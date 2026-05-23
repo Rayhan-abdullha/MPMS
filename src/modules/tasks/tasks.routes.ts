@@ -10,14 +10,18 @@ const router = Router();
 router.use(authenticate);
 
 // Contextual routing parameters mapping against structural Project parents
-router
-  .route('/project/:projectId')
-  .post(
-    authorize(UserRole.ADMIN, UserRole.MANAGER),
-    validate(createTaskSchema),
-    taskController.createTask,
-  )
-  .get(taskController.getProjectTasks);
+router.post(
+  '/sprints/:sprintId',
+  authorize(UserRole.ADMIN, UserRole.MANAGER),
+  validate(createTaskSchema),
+  taskController.createTask,
+);
+
+router.get(
+  '/sprints/:sprintId',
+  authorize(UserRole.ADMIN, UserRole.MANAGER),
+  taskController.getProjectTasks,
+);
 
 // Independent operations tracking explicitly targets
 router

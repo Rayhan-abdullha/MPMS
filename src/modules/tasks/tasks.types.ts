@@ -4,6 +4,7 @@ export interface CreateTaskInput {
   description?: string;
   estimateHours?: number;
   dueDate?: string;
+  projectId: string;
   priority?: TaskPriority;
   status?: TaskStatus;
   sprintId?: string;

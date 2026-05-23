@@ -13,7 +13,12 @@ export const createNewProject = async (
 ) => {
   return await prisma.project.create({
     data: {
-      ...data,
+      title: data.title,
+      client: data.client,
+      description: data.description,
+      budget: data.budget,
+      thumbnail: data.thumbnail,
+      status: data.status || ProjectStatus.PLANNED,
       startDate: new Date(data.startDate),
       endDate: data.endDate ? new Date(data.endDate) : null,
       createdById: creatorId,

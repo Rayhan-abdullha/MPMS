@@ -32,4 +32,6 @@ router
     sprintController.deleteSprint,
   );
 
+router.get('/', sprintController.getAllSprints);
+
 export default router;

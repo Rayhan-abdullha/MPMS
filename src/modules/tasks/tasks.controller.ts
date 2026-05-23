@@ -1,16 +1,26 @@
 import { Request, Response, NextFunction } from 'express';
 import * as taskService from './tasks.service';
+import { sendResponse } from '../../utils/utils';
 
 export const createTask = async (
   req: Request,
   res: Response,
   next: NextFunction,
-): Promise<void> => {
+) => {
   try {
-    const { projectId } = req.params;
+    const { sprintId } = req.params;
     const operatorId = req.user!.id;
-    const task = await taskService.createTask(projectId, operatorId, req.body);
-    res.status(201).json({ status: 'success', data: { task } });
+    const task = await taskService.createTask(sprintId, operatorId, req.body);
+    sendResponse(
+      res,
+      {
+        success: true,
+        message: 'Task has been created successfully.',
+        data: task,
+      },
+      201,
+    );
+    return;
   } catch (error) {
     next(error);
   }
@@ -22,8 +32,8 @@ export const getProjectTasks = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const tasks = await taskService.getTasksByProject(
-      req.params.projectId,
+    const tasks = await taskService.getTasksBySprintId(
+      req.params.sprintId,
       req.query,
     );
     res.status(200).json({ status: 'success', data: { tasks } });

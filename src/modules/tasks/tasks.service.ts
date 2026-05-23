@@ -1,5 +1,5 @@
 import prisma from '../../config/prisma';
-import { TaskStatus, ActivityType } from '@prisma/client';
+import { ActivityType, TaskPriority } from '@prisma/client';
 import {
   CreateTaskInput,
   UpdateTaskInput,
@@ -7,48 +7,111 @@ import {
 } from './tasks.types';
 
 export const createTask = async (
-  projectId: string,
-  userId: string,
-  data: CreateTaskInput,
+  sprintId: string,
+  userId: string, // creator (ADMIN / MANAGER)
+  data: {
+    title: string;
+    description?: string;
+    estimateHours?: number;
+    dueDate?: string;
+    priority?: TaskPriority;
+    assignedIds?: string[];
+    projectId: string;
+    parentTaskId?: string;
+  },
 ) => {
-  const { assigneeIds, dueDate, ...taskData } = data;
+  const { assignedIds, projectId, dueDate, parentTaskId, ...taskData } = data;
 
-  // Verify Project Existence
-  const projectExists = await prisma.project.findUnique({
-    where: { id: projectId },
+  // 1. Check sprint exists
+  const sprint = await prisma.sprint.findUnique({
+    where: { id: sprintId },
   });
-  if (!projectExists) {
-    const error = new Error('Project not found');
+
+  if (!sprint) {
+    const error = new Error('Sprint not found');
     (error as any).statusCode = 404;
     throw error;
   }
 
-  // Use a transaction to create the task, assign members, and build logs safely
+  // 2. Validate sprint belongs to project
+  if (sprint.projectId !== projectId) {
+    const error = new Error('Sprint does not belong to this project');
+    (error as any).statusCode = 400;
+    throw error;
+  }
+
+  // 3. Validate parent task
+  if (parentTaskId) {
+    const parentTask = await prisma.task.findUnique({
+      where: { id: parentTaskId },
+    });
+
+    if (!parentTask) {
+      const error = new Error('Parent task not found');
+      (error as any).statusCode = 404;
+      throw error;
+    }
+  }
+
+  // 4. Validate assignees
+  if (assignedIds?.length) {
+    const users = await prisma.user.findMany({
+      where: { id: { in: assignedIds } },
+      select: { id: true },
+    });
+
+    if (users.length !== assignedIds.length) {
+      const error = new Error('Some assignees are invalid');
+      (error as any).statusCode = 400;
+      throw error;
+    }
+  }
+
+  // 5. Create task transaction
   return await prisma.$transaction(async (tx) => {
     const task = await tx.task.create({
       data: {
         ...taskData,
         projectId,
+        sprintId,
+        parentTaskId: parentTaskId || null,
         dueDate: dueDate ? new Date(dueDate) : null,
-        assignees:
-          assigneeIds && assigneeIds.length > 0
-            ? {
-                create: assigneeIds.map((id) => ({ userId: id })),
-              }
-            : undefined,
+
+        // Default status from schema
+        status: 'TODO',
+
+        // Assign users
+        assignees: assignedIds?.length
+          ? {
+              create: assignedIds.map((id) => ({
+                userId: id,
+              })),
+            }
+          : undefined,
       },
+
       include: {
         assignees: {
-          include: { user: { select: { id: true, name: true, avatar: true } } },
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                avatar: true,
+              },
+            },
+          },
         },
+        subTasks: true,
       },
     });
 
-    // Fire off internal activity logging lifecycle event
+    // 6. Activity log
     await tx.activityLog.create({
       data: {
         type: ActivityType.TASK_CREATED,
-        description: `Task "${task.title}" was successfully launched.`,
+        description: `Task "${task.title}" created successfully.`,
         taskId: task.id,
         userId,
       },
@@ -58,33 +121,93 @@ export const createTask = async (
   });
 };
 
-export const getTasksByProject = async (
-  projectId: string,
+export const getTasksBySprintId = async (
+  sprintId: string,
   filters: TaskQueryParams,
 ) => {
-  const { status, priority, sprintId, search } = filters;
+  const { status, priority, search } = filters;
 
-  const whereClause: any = { projectId };
-  if (status) whereClause.status = status;
-  if (priority) whereClause.priority = priority;
-  if (sprintId) whereClause.sprintId = sprintId;
-  if (search) {
+  const whereClause: any = {
+    sprintId,
+  };
+
+  // ✅ filters (clean + safe)
+  if (status) {
+    whereClause.status = status;
+  }
+
+  if (priority) {
+    whereClause.priority = priority;
+  }
+
+  if (sprintId) {
+    whereClause.sprintId = sprintId;
+  }
+
+  // ✅ search (title + description)
+  if (search?.trim()) {
     whereClause.OR = [
-      { title: { contains: search, mode: 'insensitive' } },
-      { description: { contains: search, mode: 'insensitive' } },
+      {
+        title: {
+          contains: search.trim(),
+          mode: 'insensitive',
+        },
+      },
+      {
+        description: {
+          contains: search.trim(),
+          mode: 'insensitive',
+        },
+      },
     ];
   }
 
-  return await prisma.task.findMany({
+  return prisma.task.findMany({
     where: whereClause,
+
     include: {
       assignees: {
-        include: { user: { select: { id: true, name: true, avatar: true } } },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              avatar: true,
+            },
+          },
+        },
       },
-      subTasks: true,
-      _count: { select: { comments: true, attachments: true } },
+
+      subTasks: {
+        select: {
+          id: true,
+          title: true,
+          status: true,
+        },
+      },
+
+      _count: {
+        select: {
+          comments: true,
+          attachments: true,
+          timeLogs: true,
+        },
+      },
+
+      sprint: {
+        select: {
+          id: true,
+          title: true,
+          sprintNumber: true,
+        },
+      },
     },
-    orderBy: { createdAt: 'desc' },
+
+    orderBy: [
+      { priority: 'desc' }, // HIGH first (better UX)
+      { createdAt: 'desc' },
+    ],
   });
 };
 

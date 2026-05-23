@@ -32,12 +32,12 @@ export const login = async (
     const authData = await authService.loginUser(req.body);
 
     res.cookie('mpms_auth_token', authData.accessToken, {
-      httpOnly: true,
+      httpOnly: false,
       sameSite: 'strict',
       maxAge: 24 * 60 * 60 * 1000,
     });
     res.cookie('mpms_user', authData.user, {
-      httpOnly: true,
+      httpOnly: false,
       sameSite: 'strict',
       maxAge: 24 * 60 * 60 * 1000,
     });

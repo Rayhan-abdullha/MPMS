@@ -21,12 +21,10 @@ export const listTeam = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const roleParam = req.query.role as UserRole | undefined;
-    const users = await userService.getTeamDirectory({
-      department: req.query.department as string,
-      role: roleParam,
+    const teams = await userService.getTeamDirectory({
+      role: 'MEMBER',
     });
-    res.status(200).json({ status: 'success', data: { users } });
+    res.status(200).json({ status: 'success', data: { teams } });
   } catch (error) {
     next(error);
   }

@@ -55,3 +55,17 @@ export const deleteSprint = async (
     next(error);
   }
 };
+
+export const getAllSprints = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const sprints = await sprintService.getAllSprints();
+    res.status(200).json({ status: 'success', data: { sprints } });
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
+};

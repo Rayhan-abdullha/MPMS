@@ -6,6 +6,6 @@ const router = Router();
 router.use(authenticate);
 
 router.patch('/me', modifyUser);
-router.get('/team-directory', listTeam);
+router.get('/team-members', listTeam);
 
 export default router;

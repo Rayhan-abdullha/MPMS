@@ -71,3 +71,45 @@ export const deleteSprint = async (sprintId: string) => {
 
   await prisma.sprint.delete({ where: { id: sprintId } });
 };
+export const getAllSprints = async () => {
+  const sprints = await prisma.sprint.findMany({
+    orderBy: {
+      order: 'asc',
+    },
+
+    include: {
+      project: {
+        select: {
+          id: true,
+          title: true,
+          status: true,
+        },
+      },
+
+      _count: {
+        select: {
+          tasks: true,
+        },
+      },
+    },
+  });
+
+  return sprints.map((sprint) => ({
+    id: sprint.id,
+
+    title: sprint.title,
+    sprintNumber: sprint.sprintNumber,
+
+    startDate: sprint.startDate,
+    endDate: sprint.endDate,
+
+    order: sprint.order,
+
+    project: sprint.project,
+
+    taskCount: sprint._count.tasks,
+
+    createdAt: sprint.createdAt,
+    updatedAt: sprint.updatedAt,
+  }));
+};

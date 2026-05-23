@@ -19,11 +19,11 @@ app.use(
   }),
 );
 app.use(express.json());
-
+app.use(express.urlencoded({ extended: true }));
 // Complete API Registration
 app.use('/api/v1/auth', authRoutes);
-app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/projects', projectRoutes);
+app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/sprints', sprintRoutes);
 app.use('/api/v1/tasks', taskRoutes);
 app.use('/api/v1/comments', commentRoutes);

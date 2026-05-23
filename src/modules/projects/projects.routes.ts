@@ -17,27 +17,25 @@ import { UserRole } from '@prisma/client';
 
 const router = Router();
 
-router.use(authenticate);
+router.post(
+  '/',
+  authenticate,
+  authorize(UserRole.ADMIN, UserRole.MANAGER),
+  validate(createProjectSchema),
+  createProject,
+);
 
-router
-  .route('/')
-  .post(
-    authenticate,
-    authorize(UserRole.ADMIN, UserRole.MANAGER),
-    validate(createProjectSchema),
-    createProject,
-  )
-  .get(getAllProjects);
+router.get('/', authenticate, getAllProjects);
 
-router
-  .route('/:id')
-  .get(getProjectById)
-  .patch(
-    authenticate,
-    authorize(UserRole.ADMIN, UserRole.MANAGER),
-    validate(updateProjectSchema),
-    updateProject,
-  )
-  .delete(authenticate, authorize(UserRole.ADMIN), deleteProject);
+router.get('/:id', authenticate, getProjectById);
+router.patch(
+  '/:id',
+  authenticate,
+  authorize(UserRole.ADMIN, UserRole.MANAGER),
+  validate(updateProjectSchema),
+  updateProject,
+);
+
+router.delete('/:id', authenticate, authorize(UserRole.ADMIN), deleteProject);
 
 export default router;
