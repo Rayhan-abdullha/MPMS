@@ -16,5 +16,7 @@ export const createTaskSchema = z.object({
 });
 
 export const updateTaskSchema = z.object({
-  body: createTaskSchema.shape.body.partial(),
+  body: z.object({
+    status: z.nativeEnum(TaskStatus).optional(),
+  }),
 });

@@ -42,20 +42,27 @@ export const getProjectTasks = async (
   }
 };
 
-export const updateTask = async (
+export const updateTaskStatus = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> => {
+  const taskId = req.params?.taskId;
+  console.log(taskId);
+  if (!taskId) {
+    res.status(200).json({ success: false, message: 'Task id required' });
+    return;
+  }
   try {
     const operatorId = req.user!.id;
-    const task = await taskService.updateTask(
-      req.params.id,
+    const task = await taskService.updateTaskStatus(
+      taskId,
       operatorId,
-      req.body,
+      req.body.status,
     );
     res.status(200).json({ status: 'success', data: { task } });
   } catch (error) {
+    // console.log(error);
     next(error);
   }
 };
@@ -72,3 +79,28 @@ export const deleteTask = async (
     next(error);
   }
 };
+export const getAssignedToMeTasks = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const tasks = await taskService.getAssignedToMeTasks(req.user!.id);
+    sendResponse(res, { success: true, data: { tasks } }, 200);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// export const getActivities = async (
+//   req: Request,
+//   res: Response,
+//   next: NextFunction,
+// ): Promise<void> => {
+//   try {
+//     const activities = await taskService.getActivities(req.params.id);
+//     res.status(200).json({ status: 'success', data: { activities } });
+//   } catch (error) {
+//     next(error);
+//   }
+// };

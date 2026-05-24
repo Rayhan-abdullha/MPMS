@@ -9,7 +9,7 @@ const router = Router();
 
 router.use(authenticate);
 
-// Project context endpoints
+// DONE
 router
   .route('/project/:projectId')
   .post(
@@ -19,7 +19,7 @@ router
   )
   .get(sprintController.getProjectSprints);
 
-// Direct single record actions
+// NOT DONE
 router
   .route('/:id')
   .patch(
@@ -32,6 +32,7 @@ router
     sprintController.deleteSprint,
   );
 
+// DONE
 router.get('/', sprintController.getAllSprints);
 
 export default router;

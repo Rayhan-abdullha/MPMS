@@ -1,5 +1,7 @@
-import prisma from '../../config/prisma';
-import { ActivityType, TaskPriority } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+import { ActivityType, TaskPriority, TaskStatus } from '@prisma/client';
 import {
   CreateTaskInput,
   UpdateTaskInput,
@@ -179,6 +181,24 @@ export const getTasksBySprintId = async (
         },
       },
 
+      activities: {
+        select: {
+          id: true,
+          type: true,
+          description: true,
+          createdAt: true,
+          taskId: true,
+          userId: true,
+          // Include the related User model fields needed for the frontend view
+          user: {
+            select: {
+              name: true,
+              email: true,
+            },
+          },
+        },
+      },
+
       subTasks: {
         select: {
           id: true,
@@ -211,46 +231,35 @@ export const getTasksBySprintId = async (
   });
 };
 
-export const updateTask = async (
+export const updateTaskStatus = async (
   taskId: string,
   userId: string,
-  data: UpdateTaskInput,
+  status: TaskStatus,
 ) => {
-  const { assigneeIds, dueDate, ...updateData } = data;
-
-  const existingTask = await prisma.task.findUnique({ where: { id: taskId } });
+  // 1. Enforce validation check on target task entity existence
+  const existingTask = await prisma.task.findUnique({
+    where: { id: taskId },
+  });
   if (!existingTask) {
     const error = new Error('Task not found');
     (error as any).statusCode = 404;
     throw error;
   }
 
+  // 2. Execute isolated database write operations inside a strict transaction block
   return await prisma.$transaction(async (tx) => {
-    // If explicit assignee mappings are attached, drop historical states and overwrite cleanly
-    if (assigneeIds !== undefined) {
-      await tx.taskAssignee.deleteMany({ where: { taskId } });
-    }
-
+    // Perform status modification mutation path
     const updatedTask = await tx.task.update({
       where: { id: taskId },
-      data: {
-        ...updateData,
-        dueDate: dueDate ? new Date(dueDate) : undefined,
-        assignees:
-          assigneeIds && assigneeIds.length > 0
-            ? {
-                create: assigneeIds.map((id) => ({ userId: id })),
-              }
-            : undefined,
-      },
+      data: { status },
     });
 
-    // Handle activity tracking if status values changed
-    if (data.status && data.status !== existingTask.status) {
+    // 3. Document evolutionary transition footprints if state fields do not align
+    if (status !== existingTask.status) {
       await tx.activityLog.create({
         data: {
           type: ActivityType.TASK_STATUS_CHANGED,
-          description: `Status evolved from ${existingTask.status} -> ${data.status}`,
+          description: `Status evolved from ${existingTask.status} -> ${status}`,
           taskId,
           userId,
         },
@@ -271,3 +280,108 @@ export const deleteTask = async (taskId: string) => {
 
   await prisma.task.delete({ where: { id: taskId } });
 };
+
+export const getAssignedToMeTasks = async (userId: string) => {
+  const assignments = await prisma.taskAssignee.findMany({
+    where: { userId },
+    include: {
+      task: {
+        include: {
+          project: {
+            select: { id: true, title: true },
+          },
+          sprint: {
+            select: { id: true, title: true, sprintNumber: true },
+          },
+        },
+      },
+    },
+  });
+
+  const taskIds = assignments.map((a) => a.taskId);
+
+  const [activityLogs, comments] = await Promise.all([
+    prisma.activityLog.findMany({
+      where: { taskId: { in: taskIds } },
+      select: {
+        taskId: true,
+        createdAt: true,
+        type: true,
+        description: true,
+        user: {
+          select: { name: true, email: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    }),
+
+    prisma.comment.findMany({
+      where: { taskId: { in: taskIds } },
+      select: {
+        taskId: true,
+        createdAt: true,
+        user: {
+          select: { name: true, email: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    }),
+  ]);
+
+  const logsMap = new Map<string, typeof activityLogs>();
+  for (const log of activityLogs) {
+    if (!logsMap.has(log.taskId!)) logsMap.set(log.taskId!, []);
+    logsMap.get(log.taskId!)!.push(log);
+  }
+
+  const commentsMap = new Map<string, typeof comments>();
+  for (const c of comments) {
+    if (!commentsMap.has(c.taskId)) commentsMap.set(c.taskId, []);
+    commentsMap.get(c.taskId)!.push(c);
+  }
+
+  return assignments.map((assignment) => {
+    const task = assignment.task;
+
+    return {
+      ...task,
+
+      // keep only THIS user’s assignment info
+      assignee: {
+        id: assignment.id,
+        taskId: assignment.taskId,
+        userId: assignment.userId,
+        assignedAt: assignment.assignedAt,
+      },
+
+      activityLogs: logsMap.get(task.id) ?? [],
+      comments: commentsMap.get(task.id) ?? [],
+    };
+  });
+};
+
+// export const getActivities = async (taskId: string) => {
+//   return await prisma.activityLog.findMany({
+//     where: {
+//       taskId
+//     },
+//     select: {
+//       id: true,
+//       type: true,
+//       description: true,
+//       createdAt: true,
+//       taskId: true,
+//       userId: true,
+//       // Include the related User model fields needed for the frontend view
+//       user: {
+//         select: {
+//           name: true,
+//           email: true,
+//         },
+//       },
+//     },
+//     orderBy: {
+//       createdAt: "desc", // Sorts logically so the newest activity logs appear first
+//     },
+//   });
+// };

@@ -9,14 +9,14 @@ const router = Router();
 
 router.use(authenticate);
 
-// Contextual routing parameters mapping against structural Project parents
+// DONE
 router.post(
   '/sprints/:sprintId',
   authorize(UserRole.ADMIN, UserRole.MANAGER),
   validate(createTaskSchema),
   taskController.createTask,
 );
-
+// Done
 router.get(
   '/sprints/:sprintId',
   authorize(UserRole.ADMIN, UserRole.MANAGER),
@@ -24,16 +24,25 @@ router.get(
 );
 
 // Independent operations tracking explicitly targets
-router
-  .route('/:id')
-  .patch(
-    authorize(UserRole.ADMIN, UserRole.MANAGER, UserRole.MEMBER),
-    validate(updateTaskSchema),
-    taskController.updateTask,
-  )
-  .delete(
-    authorize(UserRole.ADMIN, UserRole.MANAGER),
-    taskController.deleteTask,
-  );
+router.patch(
+  '/:taskId/status',
+  authorize(UserRole.ADMIN, UserRole.MANAGER, UserRole.MEMBER),
+  validate(updateTaskSchema),
+  taskController.updateTaskStatus,
+);
+
+router.delete(
+  '/',
+  authorize(UserRole.ADMIN, UserRole.MANAGER),
+  taskController.deleteTask,
+);
+
+router.get(
+  '/assigned-to-me',
+  authenticate,
+  authorize(UserRole.ADMIN, UserRole.MANAGER, UserRole.MEMBER),
+  taskController.getAssignedToMeTasks,
+);
+// router.get("/activities", taskController.getActivities);
 
 export default router;
