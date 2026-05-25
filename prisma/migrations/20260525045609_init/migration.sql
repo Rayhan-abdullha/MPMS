@@ -5,6 +5,9 @@ CREATE TYPE "UserRole" AS ENUM ('ADMIN', 'MANAGER', 'MEMBER');
 CREATE TYPE "ProjectStatus" AS ENUM ('PLANNED', 'ACTIVE', 'COMPLETED', 'ARCHIVED');
 
 -- CreateEnum
+CREATE TYPE "SprintStatus" AS ENUM ('ACTIVE', 'COMPLETED', 'ARCHIVED');
+
+-- CreateEnum
 CREATE TYPE "TaskStatus" AS ENUM ('TODO', 'IN_PROGRESS', 'REVIEW', 'DONE');
 
 -- CreateEnum
@@ -56,6 +59,7 @@ CREATE TABLE "Sprint" (
     "endDate" TIMESTAMP(3) NOT NULL,
     "order" INTEGER NOT NULL DEFAULT 0,
     "projectId" TEXT NOT NULL,
+    "status" "SprintStatus" NOT NULL DEFAULT 'ACTIVE',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 

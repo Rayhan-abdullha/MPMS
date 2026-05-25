@@ -96,19 +96,14 @@ export const getAllSprints = async () => {
 
   return sprints.map((sprint) => ({
     id: sprint.id,
-
     title: sprint.title,
     sprintNumber: sprint.sprintNumber,
-
     startDate: sprint.startDate,
     endDate: sprint.endDate,
-
     order: sprint.order,
-
     project: sprint.project,
-
     taskCount: sprint._count.tasks,
-
+    status: sprint.status,
     createdAt: sprint.createdAt,
     updatedAt: sprint.updatedAt,
   }));

@@ -132,8 +132,6 @@ export const getTasksBySprintId = async (
   const whereClause: any = {
     sprintId,
   };
-
-  // ✅ filters (clean + safe)
   if (status) {
     whereClause.status = status;
   }
@@ -146,7 +144,6 @@ export const getTasksBySprintId = async (
     whereClause.sprintId = sprintId;
   }
 
-  // ✅ search (title + description)
   if (search?.trim()) {
     whereClause.OR = [
       {
@@ -214,7 +211,13 @@ export const getTasksBySprintId = async (
           timeLogs: true,
         },
       },
-
+      project: {
+        select: {
+          id: true,
+          title: true,
+          status: true,
+        },
+      },
       sprint: {
         select: {
           id: true,
@@ -268,18 +271,18 @@ export const updateTaskStatus = async (
 
     // // if all task is completed, sprint status will be completed
     // TODO must
-    // const sprint = await tx.sprint.findUnique({
-    //   where: { id: existingTask.sprintId! },
-    // })
-    // if (sprint) {
-    //   const tasks = await tx.task.findMany({ where: { sprintId: sprint.id } });
-    //   if (tasks.every((task) => task.status === 'DONE')) {
-    //     await tx.sprint.update({
-    //       where: { id: sprint.id },
-    //       data: { status: 'COMPLETED' },
-    //     });
-    //   }
-    // }
+    const sprint = await tx.sprint.findUnique({
+      where: { id: existingTask.sprintId! },
+    });
+    if (sprint) {
+      const tasks = await tx.task.findMany({ where: { sprintId: sprint.id } });
+      if (tasks.every((task) => task.status === 'DONE')) {
+        await tx.sprint.update({
+          where: { id: sprint.id },
+          data: { status: 'COMPLETED' },
+        });
+      }
+    }
     return updatedTask;
   });
 };
@@ -310,18 +313,18 @@ export const updateTaskDetails = async (
 
     // if all task is completed, sprint status will be completed
     // TODO must
-    // const sprint = await tx.sprint.findUnique({
-    //   where: { id: existingTask.sprintId! },
-    // })
-    // if (sprint) {
-    //   const tasks = await tx.task.findMany({ where: { sprintId: sprint.id } });
-    //   if (tasks.every((task) => task.status === 'DONE')) {
-    //     await tx.sprint.update({
-    //       where: { id: sprint.id },
-    //       data: { status: 'COMPLETED' },
-    //     });
-    //   }
-    // }
+    const sprint = await tx.sprint.findUnique({
+      where: { id: existingTask.sprintId! },
+    });
+    if (sprint) {
+      const tasks = await tx.task.findMany({ where: { sprintId: sprint.id } });
+      if (tasks.every((task) => task.status === 'DONE')) {
+        await tx.sprint.update({
+          where: { id: sprint.id },
+          data: { status: 'COMPLETED' },
+        });
+      }
+    }
     return task;
   });
 };

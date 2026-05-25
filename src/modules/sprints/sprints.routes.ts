@@ -9,7 +9,6 @@ const router = Router();
 
 router.use(authenticate);
 
-// DONE
 router
   .route('/project/:projectId')
   .post(
@@ -19,7 +18,6 @@ router
   )
   .get(sprintController.getProjectSprints);
 
-// NOT DONE
 router
   .route('/:id')
   .patch(
@@ -32,7 +30,6 @@ router
     sprintController.deleteSprint,
   );
 
-// DONE
 router.get('/', sprintController.getAllSprints);
 
 export default router;
