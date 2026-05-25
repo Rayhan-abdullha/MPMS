@@ -1,7 +1,7 @@
 {
   "name": "prisma-b",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "server.js",
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -11,7 +11,7 @@
   },
   "description": "",
   "scripts": {
-    "start": "node dist/server.ts",
+    "start": "node dist/src/server.js",
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
     "postinstall": "prisma generate",
