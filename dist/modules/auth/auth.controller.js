@@ -42,16 +42,18 @@ exports.register = register;
 const login = async (req, res, next) => {
     try {
         const authData = await authService.loginUser(req.body);
-        res.cookie('mpms_auth_token', authData.accessToken, {
-            httpOnly: false,
-            sameSite: 'strict',
-            maxAge: 24 * 60 * 60 * 1000,
-        });
-        res.cookie('mpms_user', authData.user, {
-            httpOnly: false,
-            sameSite: 'strict',
-            maxAge: 24 * 60 * 60 * 1000,
-        });
+        // res.cookie('mpms_auth_token', authData.accessToken, {
+        //   httpOnly: true,
+        //   secure: true, // REQUIRED on Render (HTTPS)
+        //   sameSite: 'none', // REQUIRED for cross-site (Vercel/localhost ↔ Render)
+        //   maxAge: 24 * 60 * 60 * 1000,
+        // });
+        // res.cookie('mpms_user', JSON.stringify(authData.user), {
+        //   httpOnly: true,
+        //   secure: true,
+        //   sameSite: 'none',
+        //   maxAge: 24 * 60 * 60 * 1000,
+        // });
         return (0, utils_1.sendResponse)(res, {
             success: true,
             data: authData,
@@ -65,8 +67,18 @@ exports.login = login;
 const logoutController = async (req, res, next) => {
     console.log('Logging out...');
     try {
-        res.clearCookie('mpms_auth_token', { path: '/' });
-        res.clearCookie('mpms_user', { path: '/' });
+        // res.clearCookie('mpms_auth_token', {
+        //   httpOnly: true,
+        //   secure: true,
+        //   sameSite: 'none',
+        //   path: '/',
+        // });
+        // res.clearCookie('mpms_user', {
+        //   httpOnly: true,
+        //   secure: true,
+        //   sameSite: 'none',
+        //   path: '/',
+        // });
         return (0, utils_1.sendResponse)(res, {
             success: true,
             message: 'Logged out successfully',

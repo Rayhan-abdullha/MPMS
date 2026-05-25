@@ -18,6 +18,7 @@ app.use(
   cors({
     origin: ['http://localhost:3000', 'https://task-mpms.vercel.app'],
     credentials: true,
+    optionsSuccessStatus: 200,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   }),
