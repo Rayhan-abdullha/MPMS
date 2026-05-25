@@ -25,6 +25,12 @@ app.use(
 );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// health
+app.get('/health', (_req, res) => {
+  res.status(200).json({ success: true, message: 'Server is healthy..' });
+});
+
 // Complete API Registration
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/projects', projectRoutes);
