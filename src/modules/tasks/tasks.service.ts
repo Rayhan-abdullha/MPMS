@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Task } from '@prisma/client';
 
 const prisma = new PrismaClient();
 import { ActivityType, TaskPriority, TaskStatus } from '@prisma/client';
@@ -266,10 +266,65 @@ export const updateTaskStatus = async (
       });
     }
 
+    // // if all task is completed, sprint status will be completed
+    // TODO must
+    // const sprint = await tx.sprint.findUnique({
+    //   where: { id: existingTask.sprintId! },
+    // })
+    // if (sprint) {
+    //   const tasks = await tx.task.findMany({ where: { sprintId: sprint.id } });
+    //   if (tasks.every((task) => task.status === 'DONE')) {
+    //     await tx.sprint.update({
+    //       where: { id: sprint.id },
+    //       data: { status: 'COMPLETED' },
+    //     });
+    //   }
+    // }
     return updatedTask;
   });
 };
+export const updateTaskDetails = async (
+  taskId: string,
+  userId: string,
+  data: Task,
+) => {
+  const existingTask = await prisma.task.findUnique({ where: { id: taskId } });
+  if (!existingTask) {
+    const error = new Error('Task not found');
+    (error as any).statusCode = 404;
+    throw error;
+  }
+  await prisma.$transaction(async (tx) => {
+    const task = await tx.task.update({
+      where: { id: taskId },
+      data,
+    });
+    await tx.activityLog.create({
+      data: {
+        type: ActivityType.TASK_UPDATED,
+        description: 'Task details updated successfully.',
+        taskId,
+        userId,
+      },
+    });
 
+    // if all task is completed, sprint status will be completed
+    // TODO must
+    // const sprint = await tx.sprint.findUnique({
+    //   where: { id: existingTask.sprintId! },
+    // })
+    // if (sprint) {
+    //   const tasks = await tx.task.findMany({ where: { sprintId: sprint.id } });
+    //   if (tasks.every((task) => task.status === 'DONE')) {
+    //     await tx.sprint.update({
+    //       where: { id: sprint.id },
+    //       data: { status: 'COMPLETED' },
+    //     });
+    //   }
+    // }
+    return task;
+  });
+};
 export const deleteTask = async (taskId: string) => {
   const existingTask = await prisma.task.findUnique({ where: { id: taskId } });
   if (!existingTask) {

@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as projectService from './projects.service';
+import { sendResponse } from '../../utils/utils';
 
 export const createProject = async (
   req: Request,
@@ -71,7 +72,10 @@ export const deleteProject = async (
 ) => {
   try {
     await projectService.removeProjectById(req.params.id);
-    res.status(204).json({ status: 'success', data: null });
+    sendResponse(res, {
+      success: true,
+      message: 'Successfully deleted project',
+    });
   } catch (error) {
     next(error);
   }

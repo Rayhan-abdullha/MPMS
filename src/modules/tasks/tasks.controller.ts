@@ -36,7 +36,11 @@ export const getProjectTasks = async (
       req.params.sprintId,
       req.query,
     );
-    res.status(200).json({ status: 'success', data: { tasks } });
+    sendResponse(
+      res,
+      { success: true, message: 'Get all tasks', data: { tasks } },
+      200,
+    );
   } catch (error) {
     next(error);
   }
@@ -48,9 +52,8 @@ export const updateTaskStatus = async (
   next: NextFunction,
 ): Promise<void> => {
   const taskId = req.params?.taskId;
-  console.log(taskId);
   if (!taskId) {
-    res.status(200).json({ success: false, message: 'Task id required' });
+    sendResponse(res, { success: false, message: 'Task id required' }, 400);
     return;
   }
   try {
@@ -60,7 +63,46 @@ export const updateTaskStatus = async (
       operatorId,
       req.body.status,
     );
-    res.status(200).json({ status: 'success', data: { task } });
+    sendResponse(
+      res,
+      {
+        success: true,
+        message: 'Successfully updated task',
+        data: { task },
+      },
+      200,
+    );
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateTaskDetails = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  const taskId = req.params?.taskId;
+  if (!taskId) {
+    res.status(200).json({ success: false, message: 'Task id required' });
+    return;
+  }
+  try {
+    const operatorId = req.user!.id;
+    const task = await taskService.updateTaskDetails(
+      taskId,
+      operatorId,
+      req.body,
+    );
+    sendResponse(
+      res,
+      {
+        success: true,
+        message: 'Successfully updated task',
+        data: { task },
+      },
+      200,
+    );
   } catch (error) {
     // console.log(error);
     next(error);
@@ -72,9 +114,28 @@ export const deleteTask = async (
   res: Response,
   next: NextFunction,
 ): Promise<void> => {
+  const taskId = req.params.taskId;
+  if (!taskId) {
+    sendResponse(
+      res,
+      {
+        success: false,
+        message: 'Task id required',
+      },
+      400,
+    );
+    return;
+  }
   try {
-    await taskService.deleteTask(req.params.id);
-    res.status(204).json({ status: 'success', data: null });
+    await taskService.deleteTask(taskId);
+    sendResponse(
+      res,
+      {
+        success: true,
+        message: 'Successfully deleted task',
+      },
+      200,
+    );
   } catch (error) {
     next(error);
   }
@@ -86,7 +147,11 @@ export const getAssignedToMeTasks = async (
 ): Promise<void> => {
   try {
     const tasks = await taskService.getAssignedToMeTasks(req.user!.id);
-    sendResponse(res, { success: true, data: { tasks } }, 200);
+    sendResponse(
+      res,
+      { success: true, message: 'Get all assigned tasks', data: { tasks } },
+      200,
+    );
   } catch (error) {
     next(error);
   }

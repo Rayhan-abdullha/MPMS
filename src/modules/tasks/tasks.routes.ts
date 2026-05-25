@@ -9,34 +9,35 @@ const router = Router();
 
 router.use(authenticate);
 
-// DONE
 router.post(
   '/sprints/:sprintId',
   authorize(UserRole.ADMIN, UserRole.MANAGER),
   validate(createTaskSchema),
   taskController.createTask,
 );
-// Done
 router.get(
   '/sprints/:sprintId',
-  authorize(UserRole.ADMIN, UserRole.MANAGER),
+  authorize(UserRole.ADMIN, UserRole.MANAGER, UserRole.MEMBER),
   taskController.getProjectTasks,
 );
-
-// Independent operations tracking explicitly targets
 router.patch(
   '/:taskId/status',
   authorize(UserRole.ADMIN, UserRole.MANAGER, UserRole.MEMBER),
   validate(updateTaskSchema),
   taskController.updateTaskStatus,
 );
-
+router.put(
+  '/:taskId',
+  authorize(UserRole.ADMIN, UserRole.MANAGER, UserRole.MEMBER),
+  validate(updateTaskSchema),
+  taskController.updateTaskDetails,
+);
 router.delete(
-  '/',
+  '/:taskId',
+  authenticate,
   authorize(UserRole.ADMIN, UserRole.MANAGER),
   taskController.deleteTask,
 );
-
 router.get(
   '/assigned-to-me',
   authenticate,

@@ -116,12 +116,30 @@ export const updateProjectById = async (
 };
 
 export const removeProjectById = async (id: string): Promise<void> => {
-  const existingProject = await prisma.project.findUnique({ where: { id } });
-  if (!existingProject) {
-    const error = new Error('Project not found');
-    (error as any).statusCode = 404;
-    throw error;
-  }
+  await prisma.$transaction(async (tx) => {
+    const existingProject = await tx.project.findUnique({
+      where: { id },
+      select: { id: true },
+    });
 
-  await prisma.project.delete({ where: { id } });
+    if (!existingProject) {
+      const error = new Error('Project not found');
+      (error as any).statusCode = 404;
+      throw error;
+    }
+
+    // Delete all activity logs related to tasks in this project
+    await tx.activityLog.deleteMany({
+      where: {
+        task: {
+          projectId: id,
+        },
+      },
+    });
+
+    // Delete project
+    await tx.project.delete({
+      where: { id },
+    });
+  });
 };

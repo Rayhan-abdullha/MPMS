@@ -20,6 +20,12 @@ enum ProjectStatus {
   ARCHIVED
 }
 
+enum SprintStatus {
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
 enum TaskStatus {
   TODO
   IN_PROGRESS
@@ -97,23 +103,17 @@ model Project {
 
 model Sprint {
   id String @id @default(cuid())
-
   title        String
   sprintNumber Int
-
   startDate DateTime
   endDate   DateTime
-
   order Int @default(0)
-
   projectId String
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-
+  status    SprintStatus @default(ACTIVE)
   tasks Task[]
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
   @@unique([projectId, sprintNumber])
   @@index([projectId])
 }
