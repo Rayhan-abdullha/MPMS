@@ -12,9 +12,12 @@ import { errorHandler } from '../middlewares/errorHandler';
 
 const app = express();
 
+// how to solve preflight issue
+
 app.use(
   cors({
     origin: ['http://localhost:3000', 'https://task-mpms.vercel.app'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true,
   }),
 );
