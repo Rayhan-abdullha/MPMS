@@ -15,14 +15,14 @@ const reports_routes_1 = __importDefault(require("../modules/reports/reports.rou
 const nofound_1 = require("../middlewares/nofound");
 const errorHandler_1 = require("../middlewares/errorHandler");
 const app = (0, express_1.default)();
-// how to solve preflight issue
-app.use((0, cors_1.default)({
+const corsOptions = {
     origin: ['http://localhost:3000', 'https://task-mpms.vercel.app'],
     credentials: true,
-    optionsSuccessStatus: 200,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
-}));
+};
+app.use((0, cors_1.default)(corsOptions));
+app.options('*', (0, cors_1.default)(corsOptions));
 app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: true }));
 // health
