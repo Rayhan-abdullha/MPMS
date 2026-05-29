@@ -12,17 +12,15 @@ import { errorHandler } from '../middlewares/errorHandler';
 
 const app = express();
 
-// how to solve preflight issue
+const corsOptions = {
+  origin: ['http://localhost:3000', 'https://task-mpms.vercel.app'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
 
-app.use(
-  cors({
-    origin: ['http://localhost:3000', 'https://task-mpms.vercel.app'],
-    credentials: true,
-    optionsSuccessStatus: 200,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  }),
-);
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
